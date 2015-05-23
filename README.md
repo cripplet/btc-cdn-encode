@@ -19,4 +19,5 @@ Example
 ```bash
 php BTCCDN_init.php 1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1
 php BTCCDN_sendfile.php 1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1 test.txt
+php BTCCDN_sendfile.php 1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1 test.txt.gz
 ```

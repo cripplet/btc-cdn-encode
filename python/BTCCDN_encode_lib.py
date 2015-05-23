@@ -4,6 +4,8 @@ import os
 MIN_TAX = decimal.Decimal(0.0001)
 # as per v0.1.1
 MAX_DATA = 40
+LEN_HEAD = 1
+VERSION = 0
 
 class OPReturnTx:
 	global MAX_DATA
@@ -17,9 +19,43 @@ class OPReturnTx:
 	def send(self, tax):
 		pass
 
+class BTCCDNCommand:
+	global VERSION
+	COMMAND = {
+		'MSG' : 32,
+		'FILESTART' : 33,
+		'FILETERM' : 34,
+		'TERMACCT' : 34
+	}
+	v = VERSION
+
+	# cmd is a string input
+	# payload is array (?)
+	def __init__(self, cmd, payload):
+		global MAX_LENGTH
+		assert(cmd in self.COMMAND)
+		# ? assert(len(payload) <= MAX_DATA - LEN_HEAD)
+		self._c = self.COMMAND[cmd]
+		self._p = payload
+
+	@property
+	def command(self):
+		for k, v in self.COMMAND:
+			if self._c == v:
+				return k
+
+	@property
+	def payload(self):
+		return self._p
+
+	@property
+	def header(self):
+		return self.v << 5 | self._c
+		
+
 class AddrLog:
 	global MIN_TAX
-	self.tax = MIN_TAX
+	tax = MIN_TAX
 	def __init__(self, address):
 		self._addr = address
 		# if log file does not exist, create it, get count
@@ -60,7 +96,6 @@ class AddrLog:
 		pass		
 
 class File:
-	global MIN_TAX
 	def __init__(self, name):
 		self._fn = name
 

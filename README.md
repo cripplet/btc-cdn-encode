@@ -1,8 +1,11 @@
 # btc-cdn-encode
 
-file uploader for the BTC-CDN protocol
+official file uploader for the [BTC-CDN protocol](https://github.com/cripplet/btc-cdn)
 
-## Installation
+This code conforms to v.0.1.1 of the [BTC-CDN protocol]
+
+Installation
+----
 
 ```bash
 git clone https://github.com/cripplet/btc-cdn-encode.git
@@ -10,7 +13,8 @@ cd btc-cdn-encode.git
 git submodule update --init --recursive
 ```
 
-## Example
+Example
+----
 
 ```bash
 php BTCCDN_init.php 1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1

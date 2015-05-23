@@ -2,6 +2,11 @@
         require __DIR__ . '/libs/php-OP_RETURN/OP_RETURN.php';
 
 	$MIN_AMOUNT = 0.0001;
+
+	/**
+	 * message length per tx
+	 *	out of 40 bytes total, we reserve one byte for the header and four bytes for the counter
+	 */
 	$LENGTH = 35;
 
 	$VERSION = 0;

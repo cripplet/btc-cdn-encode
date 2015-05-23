@@ -1,5 +1,5 @@
 <?php
-        require __DIR__ . '/../php-OP_RETURN/OP_RETURN.php';
+        require __DIR__ . '/libs/php-OP_RETURN/OP_RETURN.php';
 
 	$MIN_AMOUNT = 0.0001;
 	$LENGTH = 35;
@@ -118,6 +118,6 @@
 
 	function _s($addr, $m) {
 		global $MIN_AMOUNT;
-		// return OP_RETURN_send($addr, $MIN_AMOUNT, $m);
+		return OP_RETURN_send($addr, $MIN_AMOUNT, $m);
 	}
 ?>

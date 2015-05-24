@@ -261,4 +261,4 @@ class OPReturnTx(object):
 		# signed, sealed, delivered
 		tx = RawTx(self.proxy, self.proxy._call('signrawtransaction', tx.raw)['hex'])
 		self.txid = self.proxy._call('sendrawtransaction', tx.raw)
-		return self.txid
+		return str(self.txid)

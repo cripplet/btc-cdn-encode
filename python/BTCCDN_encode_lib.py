@@ -240,7 +240,7 @@ class BaseSendable(object):
 			if self.addr.next:
 				self.addr = self.addr.next
 		# return the first txid and where the next file should be sent
-		return (txid, self.addr.dest)
+		return { 'txid' : txid, 'next' : self.addr.dest }
 
 class StringSendable(BaseSendable):
 	def __init__(self, s):

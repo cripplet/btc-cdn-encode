@@ -56,7 +56,6 @@ class BTCCDNCommand(object):
 	@property
 	def header(self):
 		return struct.pack('>B', self.v << 5 | self._c)
-		
 
 class AddrLog(object):
 	@staticmethod
@@ -67,6 +66,7 @@ class AddrLog(object):
 	def _verbose_log_name(dest):
 		return 'logs/%s.log' % dest
 
+	# remove the counter log
 	@staticmethod
 	def delete(dest):
 		os.remove(AddrLog._counter_log_name(dest))
@@ -229,9 +229,12 @@ class BaseSendable(object):
 	def data(self):
 		raise NotImplemented
 
-	# sends self to the target address dest, with any leftover funds going to address change
-	# throws NoFunds exception if insufficient funds
-	# returns first txid of the transaction
+	# sends binary representation of data[] into DEST with funds drawn from SRC
+	# set VERBOSE for a record of all txids and data written to the blockchain
+	# throws InsufficentFund if not enough BTC in SRC to fund transactions
+	#
+	# returns:
+	#	first txid of the transaction and suggested account deposit address
 	def send(self, src, dest, verbose=False):
 		global MAX_MSG
 		self.addr = AddrLog(src, dest, verbose)
@@ -265,7 +268,7 @@ class StringSendable(BaseSendable):
 				c += MAX_MSG
 		return self._d
 
-class FileSendable(StringSendable):	
+class FileSendable(StringSendable):
 	def __init__(self, name):
 		self._fn = name
 		with open(self.name, 'rb') as fp:

@@ -3,7 +3,6 @@ import binascii
 import BTCCDN_op_return as cdnop
 import BTCCDN_encode_lib as cdnen
 
-##
 # send a bitcoin transaction along with an OP_RETURN message
 #
 # SOURCE : either '' or a valid BTC address
@@ -17,7 +16,6 @@ import BTCCDN_encode_lib as cdnen
 #
 # returns:
 #	TX_ID of the successful transaction
-##
 def send_op_return(source, destination, message, amount=cdnop.MIN_TAX, tax=cdnop.MIN_TAX):
 	tx = cdnop.OPReturnTx(source, destination, message)
 	tx.send(amount, tax)

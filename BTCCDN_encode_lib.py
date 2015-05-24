@@ -61,11 +61,11 @@ class BTCCDNCommand(object):
 class AddrLog(object):
 	@staticmethod
 	def _counter_log_name(dest):
-		return '_' + dest + '.counter'
+		return 'logs/%s.counter' % dest
 
 	@staticmethod
 	def _verbose_log_name(dest):
-		return '_' + dest + '.log'
+		return 'logs/%s.log' % dest
 
 	@staticmethod
 	def delete(dest):

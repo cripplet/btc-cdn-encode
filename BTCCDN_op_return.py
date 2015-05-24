@@ -184,7 +184,9 @@ class OPReturnTx(object):
 		if self.dest == '':
 			self._d = str(self.proxy.getnewaddress())
 		self._m = msg
-		# populated after sendrawtransaction is called
+		# RawTx instance which is renewed every time .SEND() is called
+		self._t = None
+		# populated after sendrawtransaction is called (in .SEND())
 		self.txid = ''
 
 	@property
@@ -204,6 +206,10 @@ class OPReturnTx(object):
 		if not getattr(OPReturnTx, '_proxy', None):
 			self._proxy = btc_proxy()
 		return self._proxy
+
+	@property
+	def tx(self):
+		return self._t
 
 	# returns list of inputs to use for the transaction
 	# if self._s is specified, use ONLY funds in self._s for transaction
@@ -238,19 +244,18 @@ class OPReturnTx(object):
 	# cf. http://bitcoin.stackexchange.com/questions/25224/what-is-a-step-by-step-way-to-insert-data-in-op-return for how to implement on TESTNET
 	# cf. https://github.com/coinspark/php-OP_RETURN for implementation on MAINNET in PHP
 	def _create(self, i, o):
-		tx = RawTx(self.proxy, self.proxy.createrawtransaction(i, o))
-		return tx
+		self._t = RawTx(self.proxy, self.proxy.createrawtransaction(i, o))
 
 	# AMT and TAX are both in satoshi units
 	# returns:
 	#	txid
-	def send(self, amt=MIN_TAX, tax=MIN_TAX):
+	def send(self, amt=MIN_TAX, tax=MIN_TAX, dummy=False):
 		(i, s) = self._i(amt, tax)
 		o = self._o(s, amt, tax, i)
-		tx = self._create(i, o)
+		self._create(i, o)
 
 		# get the unpacked data and edit to suit our needs
-		d = tx.unpack()
+		d = self.tx.unpack()
 
 		# prep the OP_RETURN payload
 		p = CScriptOp.encode_op_pushdata(self.msg)
@@ -260,11 +265,13 @@ class OPReturnTx(object):
 			'value' : 0,
 			'scriptPubKey' : RawTx.BinaryStream._unpack_hex(p) + '6a',
 		})
-		tx.pack(d)
+		self.tx.pack(d)
 
 		# signed, sealed, delivered
-		# we're  using the base _CALL() function to bypass bitcoin.rpc's object shenanigans
-		tx = RawTx(self.proxy, self.proxy._call('signrawtransaction', tx.raw)['hex'])
-		self.txid = self.proxy._call('sendrawtransaction', tx.raw)
+		# we're using the base _CALL() function to bypass bitcoin.rpc's object shenanigans
+		tx = RawTx(self.proxy, self.proxy._call('signrawtransaction', self.tx.raw)['hex'])
+
+		if not dummy:
+			self.txid = self.proxy._call('sendrawtransaction', tx.raw)
 
 		return str(self.txid)

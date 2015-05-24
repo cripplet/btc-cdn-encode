@@ -15,11 +15,14 @@ import BTCCDN_encode_lib as cdnen
 # TAX : additional draw from SOURCE for blockchain confirmation in units of SATOSHIs
 #
 # returns:
-#	TX_ID of the successful transaction
-def send_op_return(source, destination, message, amount=cdnop.MIN_TAX, tax=cdnop.MIN_TAX):
-	tx = cdnop.OPReturnTx(source, destination, message)
-	tx.send(amount, tax)
-	return tx.txid
+#	TX_ID of the successful transaction and raw TX hex string of the unsigned transaction
+def send_op_return(source, destination, message, amount=cdnop.MIN_TAX, tax=cdnop.MIN_TAX, dummy=False):
+	op_return_tx = cdnop.OPReturnTx(source, destination, message)
+	sent_txid = op_return_tx.send(amount, tax, dummy)
+	return { 'txid' : sent_txid, 'raw_tx' : op_return_tx.tx.raw }
+
+def send_fild(fn):
+	return cden.FileSendable(fn).send('', '', verbose=True, dummy=True)
 
 if __name__ == '__main__':
 	print "send OP_RETURN transaction : send_op_return('', '', 'MESSAGE')"
@@ -27,4 +30,7 @@ if __name__ == '__main__':
 	print "output raw BTCCDN data : cdnen.BTCCDNCommand(cdnen.BTCCDNCommand.COMMAND['MSG'], binascii.b2a_hex('MESSAGE'), [ ('>L', 1 ) ]).data"
 	print "send short ( <= 35bytes ) BTCCDN message : cdnen.AddrLog('', '', verbose=True).send(first=True, last=True, data='MESSAGE')"
 	print "send longer BTCCDN message: cdnen.StringSendable('test.txt').send('', '', verbose=True)"
-	print "send file via BTCCDN: cdnen.FileSendable('test.txt.gz').send('', '', verbose=True)"
+	print "send file via BTCCDN: send_file('test.txt.gz')"
+
+	print send_op_return('', '', 'hello', dummy=True)
+	# print send_file('test.txt.gz')

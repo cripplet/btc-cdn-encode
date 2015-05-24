@@ -28,4 +28,4 @@ if __name__ == '__main__':
 	print "check available SOURCE funds : AddrLog(SOURCE, DESTINATION).funds"
 	print "output raw BTCCDN data : cdnen.BTCCDNCommand(cdnen.BTCCDNCommand.COMMAND['MSG'], binascii.b2a_hex('hello'), [ ('>L', 1 ) ]).data"
 	print "send short BTCCDN message : cdnen.AddrLog('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1').send(True, True, 'message')"
-	cdnen.AddrLog('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1').send(True, True, 'message')
+	cdnen.AddrLog('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', verbose=True).send(True, True, 'message')

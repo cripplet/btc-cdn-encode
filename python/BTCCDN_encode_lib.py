@@ -54,14 +54,20 @@ class BTCCDNCommand(object):
 
 class AddrLog(object):
 	@staticmethod
-	def _logname(dest):
+	def _counter_log_name(dest):
+		return '_' + dest + '.counter'
+
+	@staticmethod
+	def _verbose_log_name(dest):
 		return '_' + dest + '.log'
 
 	@staticmethod
 	def delete(dest):
-		os.remove(AddrLog._logname(dest))
+		os.remove(AddrLog._counter_log_name(dest))
 
-	def __init__(self, src, dest, fast=False):
+	# FAST : if we should check the counter log after every tx
+	# VERBOSE : if a { TXID : OP_RETURN DATA } log should be kept
+	def __init__(self, src, dest, verbose=False, fast=False):
 		self._d = dest
 		self._s = src
 		self._p = btc_proxy()
@@ -70,23 +76,35 @@ class AddrLog(object):
 
 		# if log file does not exist, create it, get count
 		self._c = 0
-		if not os.path.isfile(self.logname):
-			fp = open(self.logname, 'w')
-			fp.write(str(0))
-			fp.close()
-		fp = open(self.logname, 'r')
-		self._c = int(fp.readline())
-		fp.close()
+		if not os.path.isfile(self.counter_log_name):
+			with open(self.counter_log_name, 'w') as fp:
+				fp.write(str(0))
+		with open(self.counter_log_name, 'r') as fp:
+			self._c = int(fp.readline())
+
+		# initialize the verbose log
+		if not os.path.isfile(self.verbose_log_name):
+			with open(self.verbose_log_name, 'w'):
+				pass
 
 		self._f = fast
+		self._v = verbose
+
+	@property
+	def verbose(self):
+		return self._v
 
 	@property
 	def fast(self):
 		return self._f
 
 	@property
-	def logname(self):
-		return AddrLog._logname(self.dest)
+	def counter_log_name(self):
+		return AddrLog._counter_log_name(self.dest)
+
+	@property
+	def verbose_log_name(self):
+		return AddrLog._verbose_log_name(self.dest)
 
 	@property
 	def proxy(self):
@@ -117,9 +135,13 @@ class AddrLog(object):
 			self.update()
 
 	def update(self):
-		fp = open(self.logname, 'w')
-		fp.write(str(self.count))
-		fp.close()
+		with open(self.counter_log_name, 'w') as fp:
+			fp.write(str(self.count))
+
+	def write(self, data):
+		with open(self.verbose_log_name, 'a') as fp:
+			fp.write(data + '\n')
+		
 
 	# return how much spending potential the current ADDRESS has
 	@property
@@ -136,8 +158,10 @@ class AddrLog(object):
 			c |= BTCCDNCommand.COMMAND['FILESTART']
 		if last:
 			c |= BTCCDNCommand.COMMAND['FILETERM']
-		print binascii.b2a_hex(BTCCDNCommand(c, data, [ ('>L', self.count) ]).data)
-		# txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, BTCCDNCommand(c, data, [ ('>L', self.count) ]).data).send()
+		d = BTCCDNCommand(c, data, [ ('>L', self.count) ]).data
+		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
+		if self.verbose:
+			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
 		if True: # self.count == 0xffffffff:
 			_n = self.proxy.getnewaddress()
 			self._n = AddrLog(self.src, str(_n), self.fast)
@@ -148,12 +172,14 @@ class AddrLog(object):
 			# update file
 			if last:
 				self.update()
-		# return txid
+		return txid
 
 	def term(self, next=''):
-		print binascii.b2a_hex(BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], self.next.dest).data), self.next.dest
-		# txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], self.next.dest).data).send()
-		# return txid
+		d = BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], self.next.dest).data
+		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
+		if self.verbose:
+			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
+		return txid
 
 """
 class FileBase(object):

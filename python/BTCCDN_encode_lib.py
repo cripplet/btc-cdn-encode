@@ -254,8 +254,16 @@ class OPReturnTx(object):
 		})
 		tx.pack(d)
 
+		# here
+		# signed, sealed, delivered
+		# pprint(tx.unpack())
+		# tx = RawTx(self.proxy, self.proxy.signrawtransaction(json.dumps(tx.unpack())))
+
+		# pprint(tx.json)
+		# print tx.json['txid']
+
 # OPReturnTx('', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', 'Hello world!').send(1000, MIN_TAX)
-OPReturnTx('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', 'Hello world!').send(1000, MIN_TAX)
+OPReturnTx('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', 'Hello').send(1000, MIN_TAX)
 
 class BTCCDNCommand(object):
 	global VERSION

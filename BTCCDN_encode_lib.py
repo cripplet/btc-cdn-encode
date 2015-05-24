@@ -59,12 +59,12 @@ class BTCCDNCommand(object):
 
 class AddrLog(object):
 	@staticmethod
-	def _counter_log_name(dest):
-		return 'logs/%s.counter' % dest
+	def _counter_log_name(dest, dummy):
+		return 'logs/%s.%scounter' % (dest, '' if not dummy else 'dummy.')
 
 	@staticmethod
-	def _verbose_log_name(dest):
-		return 'logs/%s.log' % dest
+	def _verbose_log_name(dest, dummy):
+		return 'logs/%s.%slog' % (dest, '' if not dummy else 'dummy.')
 
 	# remove the counter log
 	@staticmethod
@@ -76,10 +76,11 @@ class AddrLog(object):
 	# SRC and DEST may be set to '' or valid BTC addresses
 	# if SRC = '', funds are drawn from any address in the wallet
 	# if DEST = '', a random destination address will be picked for you to use until address expiration (COUNTER overflow)
-	def __init__(self, src, dest, verbose=False, fast=False):
+	def __init__(self, src, dest, verbose=False, fast=False, dummy=False):
 		self._s = src
 		self._d = dest
 		self._p = btc_proxy()
+		self._dummy = dummy
 
 		if self.dest == '':
 			self._d = str(self.proxy.getnewaddress())
@@ -104,6 +105,10 @@ class AddrLog(object):
 		self._v = verbose
 
 	@property
+	def dummy(self):
+		return self._dummy
+
+	@property
 	def verbose(self):
 		return self._v
 
@@ -113,11 +118,11 @@ class AddrLog(object):
 
 	@property
 	def counter_log_name(self):
-		return AddrLog._counter_log_name(self.dest)
+		return AddrLog._counter_log_name(self.dest, self.dummy)
 
 	@property
 	def verbose_log_name(self):
-		return AddrLog._verbose_log_name(self.dest)
+		return AddrLog._verbose_log_name(self.dest, self.dummy)
 
 	@property
 	def proxy(self):
@@ -166,7 +171,7 @@ class AddrLog(object):
 
 	# verify that we have enough funds to follow through with the entire tx chain
 	def verify(self, n):
-		assert(n > 0)
+		# assert(n > 0)
 		n_send = n
 		n_term = n / MAX_COUNTER + ((self.count + n % MAX_COUNTER) > MAX_COUNTER)
 		# extra MIN_TAX term due to the fact that in any transaction MIN_TAX must be transferred aside from MIN_TAX validation
@@ -191,7 +196,7 @@ class AddrLog(object):
 
 		d = BTCCDNCommand(c, data, [ ('>L', self.count) ]).data
 
-		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
+		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send(dummy=self.dummy)
 
 		if self.verbose:
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
@@ -209,7 +214,7 @@ class AddrLog(object):
 	# terminates this account
 	def term(self, next=''):
 		d = BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], next).data
-		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
+		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send(dummy=self.dummy)
 		if self.verbose:
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
 		AddrLog.delete(self.dest)
@@ -235,9 +240,9 @@ class BaseSendable(object):
 	#
 	# returns:
 	#	first txid of the transaction and suggested account deposit address
-	def send(self, src, dest, verbose=False):
+	def send(self, src, dest, verbose=False, fast=False, dummy=False):
 		global MAX_MSG
-		self.addr = AddrLog(src, dest, verbose)
+		self.addr = AddrLog(src, dest, verbose=verbose, fast=fast, dummy=dummy)
 		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))
 		txid = ''
 		for k, v in enumerate(self.data):

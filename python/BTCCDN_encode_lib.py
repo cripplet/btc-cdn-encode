@@ -9,6 +9,12 @@ from bitcoin.wallet import P2PKHBitcoinAddress as btc_address
 
 LEN_HEAD = 1
 VERSION = 0
+MAX_COUNTER = 0xffffffff
+MAX_MSG = 35
+
+assert(LEN_HEAD > 0)
+assert(VERSION >= 0)
+assert(MAX_COUNTER > 0)
 
 class BTCCDNCommand(object):
 	global VERSION
@@ -67,11 +73,18 @@ class AddrLog(object):
 
 	# FAST : if we should check the counter log after every tx
 	# VERBOSE : if a { TXID : OP_RETURN DATA } log should be kept
+	# SRC and DEST may be set to '' or valid BTC addresses
+	# if SRC = '', funds are drawn from any address in the wallet
+	# if DEST = '', a random destination address will be picked for you to use until address expiration (COUNTER overflow)
 	def __init__(self, src, dest, verbose=False, fast=False):
-		self._d = dest
 		self._s = src
+		self._d = dest
 		self._p = btc_proxy()
-		# populated next AddrLog in case self.COUNTER overflows
+
+		if self.dest == '':
+			self._d = str(self.proxy.getnewaddress())
+
+		# populated next AddrLog in case SELF.COUNT overflows
 		self._n = None
 
 		# if log file does not exist, create it, get count
@@ -151,8 +164,25 @@ class AddrLog(object):
 			candidates = filter(lambda x: x['address'] == btc_address(self.src), candidates)
 		return sum([ x['amount'] for x in candidates ])
 
+	# verify that we have enough funds to follow through with the entire tx chain
+	def verify(self, n):
+		assert(n > 0)
+		n_send = n
+		n_term = n / MAX_COUNTER + ((self.count + n % MAX_COUNTER) > MAX_COUNTER)
+		# extra MIN_TAX term due to the fact that in any transaction MIN_TAX must be transferred aside from MIN_TAX validation
+		f = (n_send + n_term + 1) * BTCCDN_op_return.MIN_TAX
+		if f > self.funds:
+			raise BTCCDN_op_return.InsufficientFunds
+		return (n_send, n_term, f)
+
 	# sends hex-encoded data to destination address; if final = True, terminate this account
 	def send(self, first, last, data):
+		global MAX_COUNTER
+		assert(self.count <= MAX_COUNTER)
+
+		# ensure have enough funds to transmit this OP_RETURN and possible TERMACCT transaction
+		self.verify(1)
+
 		c = BTCCDNCommand.COMMAND['MSG']
 		if first:
 			c |= BTCCDNCommand.COMMAND['FILESTART']
@@ -162,9 +192,9 @@ class AddrLog(object):
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
 		if self.verbose:
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
-		if True: # self.count == 0xffffffff:
-			_n = self.proxy.getnewaddress()
-			self._n = AddrLog(self.src, str(_n), self.fast)
+		if self.count == MAX_COUNTER:
+			_n = str(self.proxy.getnewaddress())
+			self._n = AddrLog(self.src, _n, self.fast)
 			AddrLog.delete(self.dest)
 			self.term(self.next)
 		else:
@@ -181,27 +211,67 @@ class AddrLog(object):
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
 		return txid
 
-"""
-class FileBase(object):
+class BaseSendable(object):
+	def __init__(self, *args, **kwargs):
+		pass
+
+	# returns the size of the data in bytes
+	@property
+	def size(self):
+		raise NotImplemented
+
+	# return list of strings at most 35-bytes long for each term
+	@property
+	def data(self):
+		raise NotImplemented
+
+	# sends self to the target address dest, with any leftover funds going to address change
+	# throws NoFunds exception if insufficient funds
+	# returns first txid of the transaction
+	def send(self, src, dest, verbose=False):
+		global MAX_MSG
+		self.addr = AddrLog(src, dest, verbose)
+		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))
+		txid = ''
+		for k, v in enumerate(self.data):
+			_txid = self.addr.send(k == 0, k == len(self.data) - 1, v)
+			if k == 0:
+				txid = _txid
+			if self.addr.next:
+				self.addr = self.addr.next
+		# return the first txid and where the next file should be sent
+		return (txid, self.addr.dest)
+
+class StringSendable(BaseSendable):
+	def __init__(self, s):
+		self._s = s
+		super(StringSendable, self).__init__()
+
+	@property
+	def size(self):
+		return len(self._s)
+
+	@property
+	def data(self):
+		if not getattr(self, '_d', None):
+			self._d = []
+			c = 0
+			while c < self.size:
+				self._d.append(self._s[c:c + MAX_MSG])
+				c += MAX_MSG
+		return self._d
+
+class FileSendable(StringSendable):	
 	def __init__(self, name):
 		self._fn = name
+		with open(self.name, 'rb') as fp:
+			s = ''.join(fp.readlines())
+		super(FileSendable, self).__init__(s)
 
 	@property
 	def name(self):
 		return self._fn
 
-	# returns the size of the file in bytes
 	@property
 	def size(self):
 		return os.stat(self.name).st_size
-
-	@property
-	def data(self):
-		return ''
-
-	# sends self to the target address dest, with any leftover funds going to address change
-	# throws NoFunds exception if insufficient funds
-	# returns first txid of the transaction
-	def send(self, change, dest):
-		return AddrLog(change).send(dest, self.data)
-"""

@@ -169,7 +169,9 @@ class RawTx(object):
 class OPReturnTx(object):
 	global MAX_DATA
 	##
-	# src and dest are bitcoin addresses; src may be '' to indicate no preference on single input
+	# SRC and DEST are bitcoin addresses
+	# SRC may be '' to indicate no preference on single input
+	# DEST may be set to '' to send to a randomly generated BTC address (linked to the wallet)
 	# msg is binary data
 	##
 	def __init__(self, src, dest, msg):
@@ -177,6 +179,8 @@ class OPReturnTx(object):
 		assert(len(msg) <= MAX_DATA)
 		self._s = src
 		self._d = dest
+		if self.dest == '':
+			self._d = str(self.proxy.getnewaddress())
 		self._m = msg
 		# populated after sendrawtransaction is called
 		self.txid = ''
@@ -254,7 +258,6 @@ class OPReturnTx(object):
 		})
 		tx.pack(d)
 
-		# here
 		# signed, sealed, delivered
 		tx = RawTx(self.proxy, self.proxy._call('signrawtransaction', tx.raw)['hex'])
 		self.txid = self.proxy._call('sendrawtransaction', tx.raw)

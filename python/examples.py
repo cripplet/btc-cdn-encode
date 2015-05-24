@@ -24,8 +24,9 @@ def send_op_return(source, destination, message, amount=cdnop.MIN_TAX, tax=cdnop
 	return tx.txid
 
 if __name__ == '__main__':
-	print "send OP_RETURN transaction : send_op_return(SOURCE, DESTINATION, MESSAGE)"
-	print "check available SOURCE funds : AddrLog(SOURCE, DESTINATION).funds"
-	print "output raw BTCCDN data : cdnen.BTCCDNCommand(cdnen.BTCCDNCommand.COMMAND['MSG'], binascii.b2a_hex('hello'), [ ('>L', 1 ) ]).data"
-	print "send short BTCCDN message : cdnen.AddrLog('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1').send(True, True, 'message')"
-	cdnen.AddrLog('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', verbose=True).send(True, True, 'message')
+	print "send OP_RETURN transaction : send_op_return('', '', 'MESSAGE')"
+	print "check available SOURCE funds : cdnen.AddrLog(SOURCE, '').funds"
+	print "output raw BTCCDN data : cdnen.BTCCDNCommand(cdnen.BTCCDNCommand.COMMAND['MSG'], binascii.b2a_hex('MESSAGE'), [ ('>L', 1 ) ]).data"
+	print "send short BTCCDN message : cdnen.AddrLog('', '', verbose=True).send(first=True, last=True, data='MESSAGE')"
+	print "send longer BTCCDN message: cdnen.StringSendable('def').send('', '', verbose=True)"
+	print "send file via BTCCDN: cdnen.FileSendable('../test.txt.gz').send('', '', verbose=True)"

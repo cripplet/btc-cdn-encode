@@ -1,8 +1,6 @@
 # btc-cdn-encode
 
-official file uploader for the [BTC-CDN protocol](https://github.com/cripplet/btc-cdn)
-
-This code conforms to v.0.1.1 of the [BTC-CDN protocol]
+official file uploader for the [BTC-CDN protocol v0.1.1](https://github.com/cripplet/btc-cdn)
 
 Installation
 ----

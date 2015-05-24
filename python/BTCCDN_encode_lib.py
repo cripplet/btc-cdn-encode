@@ -180,6 +180,8 @@ class OPReturnTx(object):
 		self._s = src
 		self._d = dest
 		self._m = msg
+		# populated after sendrawtransaction is called
+		self.txid = ''
 
 	@property
 	def msg(self):
@@ -256,14 +258,12 @@ class OPReturnTx(object):
 
 		# here
 		# signed, sealed, delivered
-		# pprint(tx.unpack())
-		# tx = RawTx(self.proxy, self.proxy.signrawtransaction(json.dumps(tx.unpack())))
-
-		# pprint(tx.json)
-		# print tx.json['txid']
+		tx = RawTx(self.proxy, self.proxy._call('signrawtransaction', tx.raw)['hex'])
+		self.txid = self.proxy._call('sendrawtransaction', tx.raw)
+		return self.txid
 
 # OPReturnTx('', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', 'Hello world!').send(1000, MIN_TAX)
-OPReturnTx('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', 'Hello').send(1000, MIN_TAX)
+print(OPReturnTx('1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', '1AU6kp7Cb5pmocQcVNqwdAbRq9HLwaZoW1', 'Hello').send(1000, MIN_TAX))
 
 class BTCCDNCommand(object):
 	global VERSION

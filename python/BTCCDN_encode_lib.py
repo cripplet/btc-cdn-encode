@@ -188,14 +188,16 @@ class AddrLog(object):
 			c |= BTCCDNCommand.COMMAND['FILESTART']
 		if last:
 			c |= BTCCDNCommand.COMMAND['FILETERM']
+
 		d = BTCCDNCommand(c, data, [ ('>L', self.count) ]).data
+
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
+
 		if self.verbose:
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
 		if self.count == MAX_COUNTER:
 			_n = str(self.proxy.getnewaddress())
 			self._n = AddrLog(self.src, _n, self.fast)
-			AddrLog.delete(self.dest)
 			self.term(self.next)
 		else:
 			self.count += 1
@@ -204,11 +206,13 @@ class AddrLog(object):
 				self.update()
 		return txid
 
+	# terminates this account
 	def term(self, next=''):
-		d = BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], self.next.dest).data
+		d = BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], next).data
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send()
 		if self.verbose:
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
+		AddrLog.delete(self.dest)
 		return txid
 
 class BaseSendable(object):

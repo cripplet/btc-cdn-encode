@@ -225,7 +225,7 @@ class OPReturnTx(object):
 	# if self._s == '', create a new change address, otherwise send change back to self._src
 	def _o(self, s, v, t, input):
 		output = { self._d : s - t if self._s == self._d else v }
-		if self._s == '':
+		if self._s == '' and s - v - t != 0:
 			output[self.proxy.getrawchangeaddress().__str__()] = s - v - t
 		for k in output:
 			output[k] = output[k] * 10 ** -8

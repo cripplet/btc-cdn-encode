@@ -19,9 +19,9 @@ assert(MAX_COUNTER > 0)
 class BTCCDNCommand(object):
 	global VERSION
 	COMMAND = {
-		'MSG' : 32,
-		'FILESTART' : 33,
-		'FILETERM' : 34,
+		'MSG' : 16,
+		'FILESTART' : 17,
+		'FILETERM' : 18,
 		'TERMACCT' : 1,
 	}
 	v = VERSION

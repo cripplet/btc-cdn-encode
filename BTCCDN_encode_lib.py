@@ -68,8 +68,8 @@ class AddrLog(object):
 
 	# remove the counter log
 	@staticmethod
-	def delete(dest):
-		os.remove(AddrLog._counter_log_name(dest))
+	def delete(dest, dummy):
+		os.remove(AddrLog._counter_log_name(dest, dummy))
 
 	# FAST : if we should check the counter log after every tx
 	# VERBOSE : if a { TXID : OP_RETURN DATA } log should be kept
@@ -202,7 +202,7 @@ class AddrLog(object):
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
 		if self.count == MAX_COUNTER:
 			_n = str(self.proxy.getnewaddress())
-			self._n = AddrLog(self.src, _n, self.fast)
+			self._n = AddrLog(self.src, _n, fast=self.fast, dummy=self.dummy)
 			self.term(self.next)
 		else:
 			self.count += 1
@@ -217,7 +217,7 @@ class AddrLog(object):
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send(dummy=self.dummy)
 		if self.verbose:
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
-		AddrLog.delete(self.dest)
+		AddrLog.delete(self.dest, self.dummy)
 		return txid
 
 class BaseSendable(object):

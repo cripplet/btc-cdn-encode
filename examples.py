@@ -32,5 +32,7 @@ if __name__ == '__main__':
 	print "send longer BTCCDN message: cdnen.StringSendable('test.txt').send('', '', verbose=True)"
 	print "send file via BTCCDN: send_file('test.txt.gz')"
 
-	print send_op_return('test message', dummy=True)
-	print send_file('gettysburg.txt.gz', dummy=True)
+	print cdnen.StringSendable('ssssss').send('', '', verbose=True, fast=True, dummy=True)
+
+	# print send_op_return('test message', dummy=True)
+	# print send_file('gettysburg.txt.gz', dummy=True)

@@ -4,6 +4,8 @@ import os
 import binascii
 import struct
 
+from itertools import chain
+
 from bitcoin.rpc import Proxy as btc_proxy
 from bitcoin.wallet import P2PKHBitcoinAddress as btc_address
 
@@ -83,7 +85,9 @@ class AddrLog(object):
 		self._dummy = dummy
 
 		if self.dest == '':
+			# we know this is in our wallet
 			self._d = str(self.proxy.getnewaddress())
+			self._b = True
 
 		# populated next AddrLog in case SELF.COUNT overflows
 		self._n = None
@@ -169,16 +173,26 @@ class AddrLog(object):
 			candidates = filter(lambda x: x['address'] == btc_address(self.src), candidates)
 		return sum([ x['amount'] for x in candidates ])
 
+	# checks to see if self.DEST is in own wallet
+	@property
+	def belongs(self):
+		if getattr(self, '_b', None) == None:
+			self._b = self.dest in [ str(x[0]) for x in list(chain(*self.proxy.listaddressgroupings())) ]
+		return self._b
+
+	def _get_quanta(self, n):
+		n_send = n * (not self.belongs)
+		n_fees = n
+		return n_send + n_fees
+
 	# verify that we have enough funds to follow through with the entire tx chain
 	def verify(self, n):
-		# assert(n > 0)
-		n_send = n
+		n_msgs = n
 		n_term = n / MAX_COUNTER + ((self.count + n % MAX_COUNTER) > MAX_COUNTER)
-		# extra MIN_TAX term due to the fact that in any transaction MIN_TAX must be transferred aside from MIN_TAX validation
-		f = (n_send + n_term + 1) * BTCCDN_op_return.MIN_TAX
+		f = min(2, self._get_quanta(n_msgs) + self._get_quanta(n_term)) * BTCCDN_op_return.MIN_TAX
 		if f > self.funds:
 			raise BTCCDN_op_return.InsufficientFunds
-		return (n_send, n_term, f)
+		return f
 
 	# sends hex-encoded data to destination address; if final = True, terminate this account
 	def send(self, first, last, data):

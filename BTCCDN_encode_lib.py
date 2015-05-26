@@ -3,8 +3,11 @@ import BTCCDN_op_return
 import os
 import binascii
 import struct
+import csv
 
+from tempfile import NamedTemporaryFile as tempfile
 from itertools import chain
+from shutil import move
 
 from bitcoin.rpc import Proxy as btc_proxy
 from bitcoin.wallet import P2PKHBitcoinAddress as btc_address
@@ -163,8 +166,10 @@ class AddrLog(object):
 			self.update()
 
 	def update(self):
-		with open(self.counter_log_name, 'w') as fp:
-			fp.write(str(self.count))
+		t = tempfile(delete=False)
+		with open(self.counter_log_name, 'r') as fp, t:
+			t.write(str(self.count))
+			move(t.name, self.counter_log_name)
 
 	def write(self, data):
 		with open(self.verbose_log_name, 'a') as fp:

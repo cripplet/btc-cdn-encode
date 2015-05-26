@@ -1,6 +1,6 @@
 # btc-cdn-encode
 
-official upload-side component implementation of the [BTC-CDN protocol v0.1.1](https://github.com/cripplet/btc-cdn/releases/tag/0.1.1)
+official upload-side component implementation of the [BTC-CDN protocol v0.2](https://github.com/cripplet/btc-cdn/releases/tag/0.2)
 
 Dependencies
 ----

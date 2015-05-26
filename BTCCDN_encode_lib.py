@@ -16,7 +16,7 @@ MAX_MSG = 35
 
 assert(LEN_HEAD > 0)
 assert(VERSION >= 0)
-assert(MAX_COUNTER > 0)
+assert(MAX_COUNTER >= 0)
 
 class BTCCDNCommand(object):
 	global VERSION
@@ -188,7 +188,7 @@ class AddrLog(object):
 	# verify that we have enough funds to follow through with the entire tx chain
 	def verify(self, n):
 		n_msgs = n
-		n_term = n / MAX_COUNTER + ((self.count + n % MAX_COUNTER) > MAX_COUNTER)
+		n_term = n / (MAX_COUNTER + 1) + ((self.count + n % (MAX_COUNTER + 1)) > MAX_COUNTER)
 		f = min(2, self._get_quanta(n_msgs) + self._get_quanta(n_term)) * BTCCDN_op_return.MIN_TAX
 		if f > self.funds:
 			raise BTCCDN_op_return.InsufficientFunds
@@ -216,8 +216,8 @@ class AddrLog(object):
 			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
 		if self.count == MAX_COUNTER:
 			_n = str(self.proxy.getnewaddress())
-			self._n = AddrLog(self.src, _n, fast=self.fast, dummy=self.dummy)
-			self.term(self.next)
+			self._n = AddrLog(self.src, _n, fast=self.fast, verbose=self.verbose, dummy=self.dummy)
+			self.term(self.next.dest)
 		else:
 			self.count += 1
 			# update file
@@ -260,9 +260,9 @@ class BaseSendable(object):
 		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))
 		txid = ''
 		for k, v in enumerate(self.data):
-			_txid = self.addr.send(k == 0, k == len(self.data) - 1, v)
+			tmp_txid = self.addr.send(k == 0, k == len(self.data) - 1, v)
 			if k == 0:
-				txid = _txid
+				txid = tmp_txid
 			if self.addr.next:
 				self.addr = self.addr.next
 		# return the first txid and where the next file should be sent

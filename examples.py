@@ -25,14 +25,16 @@ def send_file(fn, source='', destination='', dummy=False):
 	return cdnen.FileSendable(fn).send(source, destination, verbose=True, fast=True, dummy=dummy)
 
 if __name__ == '__main__':
-	print "send OP_RETURN transaction : send_op_return('MESSAGE')"
-	print "check available SOURCE funds : cdnen.AddrLog(SOURCE, '').funds"
-	print "output raw BTCCDN data : cdnen.BTCCDNCommand(cdnen.BTCCDNCommand.COMMAND['MSG'], binascii.b2a_hex('MESSAGE'), [ ('>L', 1 ) ]).data"
-	print "send short ( <= 35bytes ) BTCCDN message : cdnen.AddrLog('', '', verbose=True).send(first=True, last=True, data='MESSAGE')"
-	print "send longer BTCCDN message: cdnen.StringSendable('test.txt').send('', '', verbose=True)"
-	print "send file via BTCCDN: send_file('test.txt.gz')"
+	"""
+		send OP_RETURN transaction : send_op_return('MESSAGE')
+		check available SOURCE funds : cdnen.AddrLog(SOURCE, '').funds
+		output raw BTCCDN data : cdnen.BTCCDNCommand(cdnen.BTCCDNCommand.COMMAND['MSG'], binascii.b2a_hex('MESSAGE'), [ ('>L', 1 ) ]).data
+		send short ( <= 35bytes ) BTCCDN message : cdnen.AddrLog('', '', verbose=True).send(first=True, last=True, data='MESSAGE')
+		send longer BTCCDN message: cdnen.StringSendable('test.txt').send('', '', verbose=True)
+		send file via BTCCDN: send_file('test.txt.gz')
+	"""
 
-	print cdnen.StringSendable('ssssss').send('', '', verbose=True, fast=True, dummy=True)
+	# print cdnen.StringSendable('abcd').send('', '', verbose=True, fast=True, dummy=True)
 
 	# print send_op_return('test message', dummy=True)
 	# print send_file('gettysburg.txt.gz', dummy=True)

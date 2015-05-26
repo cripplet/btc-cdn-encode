@@ -254,6 +254,8 @@ class OPReturnTx(object):
 		o = self._o(s, amt, tax, i)
 		self._create(i, o)
 
+		assert(s - tax == round(sum([ v * 10 ** 8 for k, v in o.items() ])))
+
 		# get the unpacked data and edit to suit our needs
 		d = self.tx.unpack()
 

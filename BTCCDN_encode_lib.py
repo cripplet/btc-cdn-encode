@@ -71,26 +71,29 @@ class AddrLog(object):
 	def _verbose_log_name(dest, dummy):
 		return 'logs/%s.%slog' % (dest, '' if not dummy else 'dummy.')
 
-	# remove the counter log
-	@staticmethod
-	def delete(dest, dummy):
-		os.remove(AddrLog._counter_log_name(dest, dummy))
-
 	# FAST : if we should check the counter log after every tx
 	# VERBOSE : if a { TXID : OP_RETURN DATA } log should be kept
+	# SUGG : list of suggested next DEST addresses
 	# SRC and DEST may be set to '' or valid BTC addresses
 	# if SRC = '', funds are drawn from any address in the wallet
-	# if DEST = '', a random destination address will be picked for you to use until address expiration (COUNTER overflow)
-	def __init__(self, src, dest, verbose=False, fast=False, dummy=False):
+	# if DEST = '', a random destination address will be popped off of SUGG, or as a backup, randomly picked for you to use until address expiration (COUNTER overflow) 
+	def __init__(self, src, dest, sugg=None, verbose=False, fast=False, dummy=False):
 		self._s = src
 		self._d = dest
 		self._p = btc_proxy()
 		self._dummy = dummy
 
+		if sugg is None:
+			sugg = []
+
 		if self.dest == '':
-			# we know this is in our wallet
+			if len(sugg):
+				self._d = sugg.pop()
+		if self.dest == '':
 			self._d = str(self.proxy.getnewaddress())
-			self._b = True
+
+		self._sugg = sugg
+
 		# set source address
 		if self.src == '':
 			candidates = sorted(self.proxy.listunspent(), lambda x, y: cmp(y['amount'], x['amount']))
@@ -115,6 +118,10 @@ class AddrLog(object):
 
 		self._f = fast
 		self._v = verbose
+
+	@property
+	def suggestions(self):
+		return self._sugg
 
 	@property
 	def dummy(self):
@@ -203,9 +210,7 @@ class AddrLog(object):
 	# checks to see if self.DEST is in own wallet
 	@property
 	def belongs(self):
-		if getattr(self, '_b', None) == None:
-			self._b = self.dest in [ str(x[0]) for x in list(chain(*self.proxy.listaddressgroupings())) ]
-		return self._b
+		return self.src == self.dest
 
 	def _get_quanta(self, n):
 		n_send = n * (not self.belongs)
@@ -243,8 +248,7 @@ class AddrLog(object):
 			self.log('\t'.join([ self.src, txid, binascii.b2a_hex(d) ]))
 		if self.count == MAX_COUNTER or (last and final):
 			if not final:
-				_n = str(self.proxy.getnewaddress())
-				self._n = AddrLog(self.src, _n, fast=self.fast, verbose=self.verbose, dummy=self.dummy)
+				self._n = AddrLog(self.src, '', sugg=self.suggestions, fast=self.fast, verbose=self.verbose, dummy=self.dummy)
 			self.term('' if final else self.next.dest)
 		else:
 			self.count += 1
@@ -255,11 +259,11 @@ class AddrLog(object):
 
 	# terminates this account
 	def term(self, next=''):
+		self.write()
 		d = BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], next).data
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send(dummy=self.dummy)
 		if self.verbose:
 			self.log('\t'.join([ self.src, txid, binascii.b2a_hex(d) ]))
-		AddrLog.delete(self.dest, self.dummy)
 		return txid
 
 class BaseSendable(object):
@@ -284,9 +288,9 @@ class BaseSendable(object):
 	#	first TXID of the transaction
 	#	SRC and DEST addresses of the transaction
 	#	NEXT destination address to send to in case the account is not closed
-	def send(self, src, dest, verbose=False, fast=False, dummy=False, final=False):
+	def send(self, src, dest, sugg=None, verbose=False, fast=False, dummy=False, final=False):
 		global MAX_MSG
-		self.addr = AddrLog(src, dest, verbose=verbose, fast=fast, dummy=dummy)
+		self.addr = AddrLog(src, dest, sugg=sugg, verbose=verbose, fast=fast, dummy=dummy)
 		# self.addr.dest changes in case AddrLog.TERM() is called
 		dest = self.addr.dest
 		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))

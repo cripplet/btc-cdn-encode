@@ -102,12 +102,11 @@ class AddrLog(object):
 		self._n = None
 
 		# if log file does not exist, create it, get count
-		self._c = 0
 		if not os.path.isfile(self.counter_log_name):
 			with open(self.counter_log_name, 'w') as fp:
-				fp.write(str(0))
-		with open(self.counter_log_name, 'r') as fp:
-			self._c = int(fp.readline())
+				pass
+
+		self._c = self.read()
 
 		# initialize the verbose log
 		if not os.path.isfile(self.verbose_log_name):
@@ -163,15 +162,32 @@ class AddrLog(object):
 	def count(self, v):
 		self._c = v
 		if not self.fast:
-			self.update()
+			self.write()
 
-	def update(self):
+	def read(self):
+		with open(self.counter_log_name, 'r') as fp:
+			r = csv.reader(fp, delimiter='\t')
+			for (addr, c) in r:
+				if self.src == addr:
+					return int(c)
+		return 0
+
+	def write(self):
+		found = False
 		t = tempfile(delete=False)
 		with open(self.counter_log_name, 'r') as fp, t:
-			t.write(str(self.count))
+			r = csv.reader(fp, delimiter='\t')
+			w = csv.writer(t, delimiter='\t')
+			for (addr, c) in r:
+				if self.src == addr:
+					found = True
+					c = self.count
+				w.writerow((addr, c))
+			if not found:
+				w.writerow((self.src, self.count))
 			move(t.name, self.counter_log_name)
 
-	def write(self, data):
+	def log(self, data):
 		with open(self.verbose_log_name, 'a') as fp:
 			fp.write(data + '\n')
 		
@@ -206,7 +222,7 @@ class AddrLog(object):
 		return f
 
 	# sends hex-encoded data to destination address; if final = True, terminate this account
-	def send(self, first, last, data):
+	def send(self, first, last, data, final=False):
 		global MAX_COUNTER
 		assert(self.count <= MAX_COUNTER)
 
@@ -224,16 +240,17 @@ class AddrLog(object):
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send(dummy=self.dummy)
 
 		if self.verbose:
-			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
-		if self.count == MAX_COUNTER:
-			_n = str(self.proxy.getnewaddress())
-			self._n = AddrLog(self.src, _n, fast=self.fast, verbose=self.verbose, dummy=self.dummy)
-			self.term(self.next.dest)
+			self.log('\t'.join([ self.src, txid, binascii.b2a_hex(d) ]))
+		if self.count == MAX_COUNTER or (last and final):
+			if not final:
+				_n = str(self.proxy.getnewaddress())
+				self._n = AddrLog(self.src, _n, fast=self.fast, verbose=self.verbose, dummy=self.dummy)
+			self.term('' if final else self.next.dest)
 		else:
 			self.count += 1
 			# update file
 			if last:
-				self.update()
+				self.write()
 		return txid
 
 	# terminates this account
@@ -241,7 +258,7 @@ class AddrLog(object):
 		d = BTCCDNCommand(BTCCDNCommand.COMMAND['TERMACCT'], next).data
 		txid = BTCCDN_op_return.OPReturnTx(self.src, self.dest, d).send(dummy=self.dummy)
 		if self.verbose:
-			self.write('\t'.join([ txid, binascii.b2a_hex(d) ]))
+			self.log('\t'.join([ self.src, txid, binascii.b2a_hex(d) ]))
 		AddrLog.delete(self.dest, self.dummy)
 		return txid
 
@@ -267,7 +284,7 @@ class BaseSendable(object):
 	#	first TXID of the transaction
 	#	SRC and DEST addresses of the transaction
 	#	NEXT destination address to send to in case the account is not closed
-	def send(self, src, dest, verbose=False, fast=False, dummy=False):
+	def send(self, src, dest, verbose=False, fast=False, dummy=False, final=False):
 		global MAX_MSG
 		self.addr = AddrLog(src, dest, verbose=verbose, fast=fast, dummy=dummy)
 		# self.addr.dest changes in case AddrLog.TERM() is called
@@ -275,12 +292,12 @@ class BaseSendable(object):
 		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))
 		txid = ''
 		for k, v in enumerate(self.data):
-			tmp_txid = self.addr.send(k == 0, k == len(self.data) - 1, v)
+			tmp_txid = self.addr.send(k == 0, k == len(self.data) - 1, v, final=final)
 			if k == 0:
 				txid = tmp_txid
 			if self.addr.next:
 				self.addr = self.addr.next
-		return { 'txid' : txid, 'next' : self.addr.dest, 'src' : self.addr.src, 'dest' : dest }
+		return { 'txid' : txid, 'next' : '' if final else self.addr.dest, 'src' : self.addr.src, 'dest' : dest }
 
 class StringSendable(BaseSendable):
 	def __init__(self, s):

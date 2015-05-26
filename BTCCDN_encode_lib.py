@@ -88,6 +88,12 @@ class AddrLog(object):
 			# we know this is in our wallet
 			self._d = str(self.proxy.getnewaddress())
 			self._b = True
+		# set source address
+		if self.src == '':
+			candidates = sorted(self.proxy.listunspent(), lambda x, y: cmp(y['amount'], x['amount']))
+			if not len(candidates):
+				raise BTCCDN_op_return.InsufficientFunds
+			self._s = str(candidates[0]['address'])
 
 		# populated next AddrLog in case SELF.COUNT overflows
 		self._n = None

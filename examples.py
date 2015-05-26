@@ -21,8 +21,8 @@ def send_op_return(message, source='', destination='', amount=cdnop.MIN_TAX, tax
 	sent_txid = op_return_tx.send(amount, tax, dummy)
 	return { 'txid' : sent_txid, 'raw_tx' : op_return_tx.tx.raw }
 
-def send_file(fn, source='', destination='', sugg=None, dummy=False, final=False):
-	return cdnen.FileSendable(fn).send(source, destination, sugg=sugg, verbose=True, fast=True, dummy=dummy, final=final)
+def send_file(fn, source='', destination='', dummy=False, final=False):
+	return cdnen.FileSendable(fn).send(source, destination, verbose=True, fast=True, dummy=dummy, final=final)
 
 if __name__ == '__main__':
 	"""

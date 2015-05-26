@@ -73,26 +73,17 @@ class AddrLog(object):
 
 	# FAST : if we should check the counter log after every tx
 	# VERBOSE : if a { TXID : OP_RETURN DATA } log should be kept
-	# SUGG : list of suggested next DEST addresses
 	# SRC and DEST may be set to '' or valid BTC addresses
 	# if SRC = '', funds are drawn from any address in the wallet
-	# if DEST = '', a random destination address will be popped off of SUGG, or as a backup, randomly picked for you to use until address expiration (COUNTER overflow) 
-	def __init__(self, src, dest, sugg=None, verbose=False, fast=False, dummy=False):
+	# if DEST = '', a random destination address will be picked for you to use until address expiration (COUNTER overflow) 
+	def __init__(self, src, dest, verbose=False, fast=False, dummy=False):
 		self._s = src
 		self._d = dest
 		self._p = btc_proxy()
 		self._dummy = dummy
 
-		if sugg is None:
-			sugg = []
-
-		if self.dest == '':
-			if len(sugg):
-				self._d = sugg.pop()
 		if self.dest == '':
 			self._d = str(self.proxy.getnewaddress())
-
-		self._sugg = sugg
 
 		# set source address
 		if self.src == '':
@@ -118,10 +109,6 @@ class AddrLog(object):
 
 		self._f = fast
 		self._v = verbose
-
-	@property
-	def suggestions(self):
-		return self._sugg
 
 	@property
 	def dummy(self):
@@ -248,7 +235,7 @@ class AddrLog(object):
 			self.log('\t'.join([ self.src, txid, binascii.b2a_hex(d) ]))
 		if self.count == MAX_COUNTER or (last and final):
 			if not final:
-				self._n = AddrLog(self.src, '', sugg=self.suggestions, fast=self.fast, verbose=self.verbose, dummy=self.dummy)
+				self._n = AddrLog(self.src, '', fast=self.fast, verbose=self.verbose, dummy=self.dummy)
 			self.term('' if final else self.next.dest)
 		else:
 			self.count += 1
@@ -288,9 +275,9 @@ class BaseSendable(object):
 	#	first TXID of the transaction
 	#	SRC and DEST addresses of the transaction
 	#	NEXT destination address to send to in case the account is not closed
-	def send(self, src, dest, sugg=None, verbose=False, fast=False, dummy=False, final=False):
+	def send(self, src, dest, verbose=False, fast=False, dummy=False, final=False):
 		global MAX_MSG
-		self.addr = AddrLog(src, dest, sugg=sugg, verbose=verbose, fast=fast, dummy=dummy)
+		self.addr = AddrLog(src, dest, verbose=verbose, fast=fast, dummy=dummy)
 		# self.addr.dest changes in case AddrLog.TERM() is called
 		dest = self.addr.dest
 		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))

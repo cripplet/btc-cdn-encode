@@ -189,7 +189,7 @@ class AddrLog(object):
 	def verify(self, n):
 		n_msgs = n
 		n_term = n / (MAX_COUNTER + 1) + ((self.count + n % (MAX_COUNTER + 1)) > MAX_COUNTER)
-		f = min(2, self._get_quanta(n_msgs) + self._get_quanta(n_term)) * BTCCDN_op_return.MIN_TAX
+		f = max(2, self._get_quanta(n_msgs) + self._get_quanta(n_term) + self.belongs) * BTCCDN_op_return.MIN_TAX
 		if f > self.funds:
 			raise BTCCDN_op_return.InsufficientFunds
 		return f

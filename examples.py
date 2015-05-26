@@ -34,7 +34,5 @@ if __name__ == '__main__':
 		send file via BTCCDN: send_file('test.txt.gz')
 	"""
 
-	# print cdnen.StringSendable('abcd').send('', '', verbose=True, fast=True, dummy=True)
-
-	# print send_op_return('test message', dummy=True)
-	# print send_file('gettysburg.txt.gz', dummy=True)
+	print send_op_return('test message', dummy=True)
+	print send_file('gettysburg.txt.gz', dummy=True)

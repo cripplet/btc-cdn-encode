@@ -259,10 +259,14 @@ class BaseSendable(object):
 	# throws InsufficentFund if not enough BTC in SRC to fund transactions
 	#
 	# returns:
-	#	first txid of the transaction and suggested account deposit address
+	#	first TXID of the transaction
+	#	SRC and DEST addresses of the transaction
+	#	NEXT destination address to send to in case the account is not closed
 	def send(self, src, dest, verbose=False, fast=False, dummy=False):
 		global MAX_MSG
 		self.addr = AddrLog(src, dest, verbose=verbose, fast=fast, dummy=dummy)
+		# self.addr.dest changes in case AddrLog.TERM() is called
+		dest = self.addr.dest
 		self.addr.verify(self.size / MAX_MSG + (self.size % MAX_MSG > 0))
 		txid = ''
 		for k, v in enumerate(self.data):
@@ -271,8 +275,7 @@ class BaseSendable(object):
 				txid = tmp_txid
 			if self.addr.next:
 				self.addr = self.addr.next
-		# return the first txid and where the next file should be sent
-		return { 'txid' : txid, 'next' : self.addr.dest }
+		return { 'txid' : txid, 'next' : self.addr.dest, 'src' : self.addr.src, 'dest' : dest }
 
 class StringSendable(BaseSendable):
 	def __init__(self, s):

@@ -24,6 +24,9 @@ def send_op_return(message, source='', destination='', amount=cdnop.MIN_TAX, tax
 def send_file(fn, source='', destination='', dummy=False, final=False):
 	return cdnen.FileSendable(fn).send(source, destination, verbose=True, fast=True, dummy=dummy, final=final)
 
+def send_string(msg, source='', destination='', dummy=False, final=False):
+	return cdnen.StringSendable(msg).send(source, destination, verbose=True, fast=True, dummy=dummy, final=final)
+
 if __name__ == '__main__':
 	"""
 		send OP_RETURN transaction : send_op_return('MESSAGE')
@@ -36,3 +39,4 @@ if __name__ == '__main__':
 
 	print send_op_return('test message', dummy=True)
 	print send_file('gettysburg.txt.gz', dummy=True)
+	print send_string('test message', dummy=True)
